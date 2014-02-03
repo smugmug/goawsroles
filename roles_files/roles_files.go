@@ -133,11 +133,21 @@ func (rf *RolesFiles) RolesWatch(err_chan chan error,read_signal chan bool) {
 						// once we have seen all of the role files trigger
 						// events, we want to lock access, read them in,
 						// unlock access, and unset our flags
-						if touched_secret_file &&
+						if touched_access_file &&
 							touched_secret_file &&
 							touched_token_file {
+							// our existing perms should be adequate while
+							// we provide for writes of new perms files to
+							// finish.
+							log.Printf("roles_files.RolesWatch: " +
+								"sleep (1) to allow file ops to complete")
+							time.Sleep(time.Duration(1) * time.Second)
 							roles_err := rf.rolesFilesRead()
 							if roles_err != nil {
+								e := fmt.Sprintf("roles_files.RolesWatch: " +
+									"zeroing all roles on err:%s",
+									roles_err.Error())
+								log.Printf(e)
 								rf.ZeroRoles()
 								err_chan <- roles_err
 							} else {
@@ -218,7 +228,7 @@ func role_file_bytes(role_file_path string) ([]byte,error) {
 		} else {
 			fe = "empty file, no err msg"
 		}
-		e := fmt.Sprintf("roles_files.rolesFilesRead: %s read err: %s",
+		e := fmt.Sprintf("roles_files.role_file_bytes: %s read err: %s",
 			role_file_path,fe)
 		if role_file_err != nil {
 			e += " " + role_file_err.Error()
