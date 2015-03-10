@@ -6,17 +6,17 @@
 package roles_files
 
 import (
+	"errors"
 	"fmt"
+	fsnotify "github.com/howeyc/fsnotify"
+	roles "github.com/smugmug/goawsroles/roles"
+	"io/ioutil"
+	"log"
+	"os"
 	"sort"
 	"strings"
-	"errors"
-	"io/ioutil"
-	"os"
-	"time"
-	"log"
 	"sync"
-	roles "github.com/smugmug/goawsroles/roles"
-	fsnotify "github.com/howeyc/fsnotify"
+	"time"
 )
 
 const (
@@ -26,26 +26,26 @@ const (
 
 // RolesFiles describes the location of roles files as well as a lock for safe access.
 type RolesFiles struct {
-	BaseDir string
+	BaseDir       string
 	AccessKeyFile string
-	SecretFile string
-	TokenFile string
-	roleFields *roles.RolesFields
-	lock sync.RWMutex
+	SecretFile    string
+	TokenFile     string
+	roleFields    *roles.RolesFields
+	lock          sync.RWMutex
 }
 
 // NewRolesFiles returns a pointer to a RolesFields instance.
-func NewRolesFiles() (*RolesFiles) {
+func NewRolesFiles() *RolesFiles {
 	r := new(RolesFiles)
 	r.roleFields = roles.NewRolesFields()
 	return r
 }
 
 // IsEmpty determines if a RolesFiles struct is uninitialized.
-func (rf *RolesFiles) IsEmpty() (bool) {
-	return rf.AccessKeyFile  == "" ||
-		rf.SecretFile    == "" ||
-		rf.TokenFile     == "" ||
+func (rf *RolesFiles) IsEmpty() bool {
+	return rf.AccessKeyFile == "" ||
+		rf.SecretFile == "" ||
+		rf.TokenFile == "" ||
 		rf.roleFields.IsEmpty()
 }
 
@@ -54,13 +54,13 @@ func (rf *RolesFiles) ZeroRoles() {
 	rf.lock.Lock()
 	defer rf.lock.Unlock()
 	rf.AccessKeyFile = ""
-	rf.SecretFile    = ""
-	rf.TokenFile     = ""
+	rf.SecretFile = ""
+	rf.TokenFile = ""
 	rf.roleFields.ZeroRoles()
 }
 
 // RolesRead populates rolesFields with blocking refresh of files
-func (rf *RolesFiles) RolesRead() (error) {
+func (rf *RolesFiles) RolesRead() error {
 	roles_err := rf.rolesFilesRead()
 	if roles_err != nil {
 		rf.ZeroRoles()
@@ -71,9 +71,9 @@ func (rf *RolesFiles) RolesRead() (error) {
 
 // RolesWatch catches filesystem notify events to determine when new roles files are ready to be read
 // in and used as new authentication values.
-func (rf *RolesFiles) RolesWatch(err_chan chan error,read_signal chan bool) {
+func (rf *RolesFiles) RolesWatch(err_chan chan error, read_signal chan bool) {
 	log.Printf("initiate roles watching\n")
-	watcher,watcher_err := fsnotify.NewWatcher()
+	watcher, watcher_err := fsnotify.NewWatcher()
 	if watcher_err != nil {
 		err_chan <- watcher_err
 	}
@@ -84,12 +84,12 @@ func (rf *RolesFiles) RolesWatch(err_chan chan error,read_signal chan bool) {
 	defer watcher.Close()
 	touched_access_file := false
 	touched_secret_file := false
-	touched_token_file  := false
+	touched_token_file := false
 	func() {
 		for {
 			select {
 			case ev := <-watcher.Event:
-				func () {
+				func() {
 					if ev.IsModify() || ev.IsCreate() {
 						ev_s := ev.String()
 						// collect events for all of the role files.
@@ -97,13 +97,13 @@ func (rf *RolesFiles) RolesWatch(err_chan chan error,read_signal chan bool) {
 						// strings when all have been written - to
 						// do so earlier would leave the strings
 						// in an inconsistent state
-						if strings.Contains(ev_s,rf.AccessKeyFile) {
+						if strings.Contains(ev_s, rf.AccessKeyFile) {
 							touched_access_file = true
 						}
-						if strings.Contains(ev_s,rf.SecretFile) {
+						if strings.Contains(ev_s, rf.SecretFile) {
 							touched_secret_file = true
 						}
-						if strings.Contains(ev_s,rf.TokenFile) {
+						if strings.Contains(ev_s, rf.TokenFile) {
 							touched_token_file = true
 						}
 						// once we have seen all of the role files trigger
@@ -120,19 +120,19 @@ func (rf *RolesFiles) RolesWatch(err_chan chan error,read_signal chan bool) {
 							time.Sleep(time.Duration(1) * time.Second)
 							roles_err := rf.rolesFilesRead()
 							if roles_err != nil {
-								e := fmt.Sprintf("roles_files.RolesWatch: " +
+								e := fmt.Sprintf("roles_files.RolesWatch: "+
 									"zeroing all roles on err:%s",
 									roles_err.Error())
 								log.Printf(e)
 								rf.ZeroRoles()
 								err_chan <- roles_err
 							} else {
-								log.Printf("roles_files.RolesWatch: " +
+								log.Printf("roles_files.RolesWatch: "+
 									"succesful re-read on %s\n",
 									ev_s)
 								touched_access_file = false
 								touched_secret_file = false
-								touched_token_file  = false
+								touched_token_file = false
 								read_signal <- true
 							}
 						}
@@ -149,54 +149,54 @@ func (rf *RolesFiles) RolesWatch(err_chan chan error,read_signal chan bool) {
 	err_chan <- nil
 }
 
-func (rf *RolesFiles) Get() (string,string,string,error) {
-	accessKey,accessKey_err := rf.GetAccessKey()
+func (rf *RolesFiles) Get() (string, string, string, error) {
+	accessKey, accessKey_err := rf.GetAccessKey()
 	if accessKey_err != nil {
-		return "","","",accessKey_err
+		return "", "", "", accessKey_err
 	}
-	secret,secret_err := rf.GetSecret()
+	secret, secret_err := rf.GetSecret()
 	if accessKey_err != nil {
-		return "","","",secret_err
+		return "", "", "", secret_err
 	}
-	token,token_err := rf.GetToken()
+	token, token_err := rf.GetToken()
 	if token_err != nil {
-		return "","","",token_err
+		return "", "", "", token_err
 	}
-	return accessKey,secret,token,nil
+	return accessKey, secret, token, nil
 }
 
-func (rf *RolesFiles) GetAccessKey() (string,error) {
+func (rf *RolesFiles) GetAccessKey() (string, error) {
 	rf.lock.RLock()
 	defer rf.lock.RUnlock()
 	if rf.roleFields.AccessKey == "" {
-		return "",errors.New("roles_files.GetAccessKey: empty AccessKey")
+		return "", errors.New("roles_files.GetAccessKey: empty AccessKey")
 	} else {
-		return rf.roleFields.AccessKey,nil
+		return rf.roleFields.AccessKey, nil
 	}
 }
 
-func (rf *RolesFiles) GetSecret() (string,error) {
+func (rf *RolesFiles) GetSecret() (string, error) {
 	rf.lock.RLock()
 	defer rf.lock.RUnlock()
 	if rf.roleFields.Secret == "" {
-		return "",errors.New("roles_files.GetSecret: empty Secret")
+		return "", errors.New("roles_files.GetSecret: empty Secret")
 	} else {
-		return rf.roleFields.Secret,nil
+		return rf.roleFields.Secret, nil
 	}
 }
 
-func (rf *RolesFiles) GetToken() (string,error) {
+func (rf *RolesFiles) GetToken() (string, error) {
 	rf.lock.RLock()
 	defer rf.lock.RUnlock()
 	if rf.roleFields.Token == "" {
-		return "",errors.New("roles_files.GetToken: empty Token")
+		return "", errors.New("roles_files.GetToken: empty Token")
 	} else {
-		return rf.roleFields.Token,nil
+		return rf.roleFields.Token, nil
 	}
 }
 
-func role_file_bytes(role_file_path string) ([]byte,error) {
-	role_file_bytes,role_file_err := ioutil.ReadFile(role_file_path)
+func role_file_bytes(role_file_path string) ([]byte, error) {
+	role_file_bytes, role_file_err := ioutil.ReadFile(role_file_path)
 	if role_file_err != nil || len(role_file_bytes) == 0 {
 		fe := ""
 		if role_file_err != nil {
@@ -205,27 +205,27 @@ func role_file_bytes(role_file_path string) ([]byte,error) {
 			fe = "empty file, no err msg"
 		}
 		e := fmt.Sprintf("roles_files.role_file_bytes: %s read err: %s",
-			role_file_path,fe)
+			role_file_path, fe)
 		if role_file_err != nil {
 			e += " " + role_file_err.Error()
 		}
-		return nil,errors.New(e)
+		return nil, errors.New(e)
 	}
-	return role_file_bytes,nil
+	return role_file_bytes, nil
 }
 
 // safety check - the mtimes of the role files should be within sixty seconds of another
-func valid_mtime_range(ts []time.Time) (bool) {
-	uts := make([]int,len(ts))
-	for i,_ := range ts {
+func valid_mtime_range(ts []time.Time) bool {
+	uts := make([]int, len(ts))
+	for i, _ := range ts {
 		uts[i] = int(ts[i].Unix())
 	}
 	sort.Sort(sort.Reverse(sort.IntSlice(uts)))
-	return ((uts[0] - uts[len(uts) - 1]) < 10)
+	return ((uts[0] - uts[len(uts)-1]) < 10)
 }
 
 // will read in data from three role files and return the struct defined in the the interface
-func (rf *RolesFiles) rolesFilesRead() (error) {
+func (rf *RolesFiles) rolesFilesRead() error {
 	rf.lock.Lock()
 	defer rf.lock.Unlock()
 	if rf.BaseDir == "" {
@@ -233,37 +233,37 @@ func (rf *RolesFiles) rolesFilesRead() (error) {
 		return errors.New(e)
 	}
 	accessKey_path := rf.BaseDir + string(os.PathSeparator) + rf.AccessKeyFile
-	accessKey_bytes,accessKey_err := role_file_bytes(accessKey_path)
+	accessKey_bytes, accessKey_err := role_file_bytes(accessKey_path)
 	if accessKey_err != nil {
 		return accessKey_err
 	}
 	secret_path := rf.BaseDir + string(os.PathSeparator) + rf.SecretFile
-	secret_bytes,secret_err := role_file_bytes(secret_path)
+	secret_bytes, secret_err := role_file_bytes(secret_path)
 	if secret_err != nil {
 		return secret_err
 	}
 	token_path := rf.BaseDir + string(os.PathSeparator) + rf.TokenFile
-	token_bytes,token_err := role_file_bytes(token_path)
+	token_bytes, token_err := role_file_bytes(token_path)
 	if token_err != nil {
 		return token_err
 	}
 
 	// get mod times for all of the files
-	uts := make([]time.Time,0)
-	for _,role_file_path := range []string{accessKey_path,secret_path,token_path} {
-		role_file_stat,role_file_stat_err := os.Stat(role_file_path)
+	uts := make([]time.Time, 0)
+	for _, role_file_path := range []string{accessKey_path, secret_path, token_path} {
+		role_file_stat, role_file_stat_err := os.Stat(role_file_path)
 		if role_file_stat_err != nil {
 			e := fmt.Sprintf("roles_files.rolesFilesRead: role_file stat err: %s",
 				role_file_stat_err.Error())
 			return errors.New(e)
 		}
-		uts = append(uts,role_file_stat.ModTime())
+		uts = append(uts, role_file_stat.ModTime())
 	}
 
 	if valid_mtime_range(uts) {
 		rf.roleFields.AccessKey = string(accessKey_bytes)
-		rf.roleFields.Secret    = string(secret_bytes)
-		rf.roleFields.Token     = string(token_bytes)
+		rf.roleFields.Secret = string(secret_bytes)
+		rf.roleFields.Token = string(token_bytes)
 		log.Printf("roles_files.rolesFilesRead: succesful assignment of role data\n")
 		return nil
 	} else {
