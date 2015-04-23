@@ -27,6 +27,15 @@ to be the struct used in the "official" AWS Go SDK.
 ### Installation
 
         go get github.com/smugmug/goawsroles/roles_files
+        go get github.com/smugmug/goawsroles/roles_master
+
+### Dependencies
+
+This package depends on the still-develop "official" AWS SDK for Go at 
+
+        github.com/awslabs/aws-sdk-go/aws
+
+This package changes often so you may need to update it directly if you have build issues with goawsroles.
 
 ### Contact Us
 
