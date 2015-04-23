@@ -8,8 +8,9 @@ package roles_files
 import (
 	"errors"
 	"fmt"
-	fsnotify "github.com/howeyc/fsnotify"
+	sdk_credentials "github.com/awslabs/aws-sdk-go/aws"
 	roles "github.com/smugmug/goawsroles/roles"
+	fsnotify "github.com/howeyc/fsnotify"
 	"io/ioutil"
 	"log"
 	"os"
@@ -20,8 +21,7 @@ import (
 )
 
 const (
-	FILE          = "file"
-	ROLE_PROVIDER = FILE
+	ROLE_PROVIDER = "file"
 )
 
 // RolesFiles describes the location of roles files as well as a lock for safe access.
@@ -41,6 +41,17 @@ func NewRolesFiles() *RolesFiles {
 	return r
 }
 
+// ProviderType is a descriptive string of the implementation.
+func (rf *RolesFiles) ProviderType() string {
+	return ROLE_PROVIDER
+}
+
+// UsingIAM tells us if the credentials provided by this role are temporary credentials which
+// also have a Token component, or if they are durable key/secret-only credentials.
+func (rf *RolesFiles) UsingIAM() bool {
+	return true
+}
+
 // IsEmpty determines if a RolesFiles struct is uninitialized.
 func (rf *RolesFiles) IsEmpty() bool {
 	return rf.AccessKeyFile == "" ||
@@ -52,11 +63,11 @@ func (rf *RolesFiles) IsEmpty() bool {
 // ZeroRoles recreate the RolesFiles as initialized by NewRolesFiles
 func (rf *RolesFiles) ZeroRoles() {
 	rf.lock.Lock()
-	defer rf.lock.Unlock()
 	rf.AccessKeyFile = ""
 	rf.SecretFile = ""
 	rf.TokenFile = ""
 	rf.roleFields.ZeroRoles()
+	rf.lock.Unlock()
 }
 
 // RolesRead populates rolesFields with blocking refresh of files
@@ -149,22 +160,32 @@ func (rf *RolesFiles) RolesWatch(err_chan chan error, read_signal chan bool) {
 	err_chan <- nil
 }
 
+// Get returns the (accessKey,secret,token), or an error.
 func (rf *RolesFiles) Get() (string, string, string, error) {
-	accessKey, accessKey_err := rf.GetAccessKey()
-	if accessKey_err != nil {
-		return "", "", "", accessKey_err
+	rf.lock.RLock()
+	defer rf.lock.RUnlock()
+	accessKey := ""
+	if rf.roleFields.AccessKey == "" {
+		return "", "", "", errors.New("roles_files.Get: empty AccessKey")
+	} else {
+		accessKey = rf.roleFields.AccessKey
 	}
-	secret, secret_err := rf.GetSecret()
-	if accessKey_err != nil {
-		return "", "", "", secret_err
+	secret := ""
+	if rf.roleFields.Secret == "" {
+		return "", "", "", errors.New("roles_files.Get: empty Secret")
+	} else {
+		secret = rf.roleFields.Secret
 	}
-	token, token_err := rf.GetToken()
-	if token_err != nil {
-		return "", "", "", token_err
+	token := ""
+	if rf.roleFields.Token == "" {
+		return "", "", "", errors.New("roles_files.Get: empty Token")
+	} else {
+		token = rf.roleFields.Token
 	}
 	return accessKey, secret, token, nil
 }
 
+// GetAccessKey returns the accessKey or an error.
 func (rf *RolesFiles) GetAccessKey() (string, error) {
 	rf.lock.RLock()
 	defer rf.lock.RUnlock()
@@ -175,6 +196,7 @@ func (rf *RolesFiles) GetAccessKey() (string, error) {
 	}
 }
 
+// GetSecret returns the secret or an error.
 func (rf *RolesFiles) GetSecret() (string, error) {
 	rf.lock.RLock()
 	defer rf.lock.RUnlock()
@@ -185,6 +207,7 @@ func (rf *RolesFiles) GetSecret() (string, error) {
 	}
 }
 
+// GetToken returns the token or an error.
 func (rf *RolesFiles) GetToken() (string, error) {
 	rf.lock.RLock()
 	defer rf.lock.RUnlock()
@@ -193,6 +216,18 @@ func (rf *RolesFiles) GetToken() (string, error) {
 	} else {
 		return rf.roleFields.Token, nil
 	}
+}
+
+// Credentials will expose the Role as a sdk Credential
+func (rf *RolesFiles) Credentials() (*sdk_credentials.Credentials, error) {
+	accessKey, secret, _, get_err := rf.Get()
+	if get_err != nil {
+		return nil, get_err
+	}
+	return &sdk_credentials.Credentials{
+		AccessKeyID:     accessKey,
+		SecretAccessKey: secret,
+		SecurityToken:   ""}, nil
 }
 
 func role_file_bytes(role_file_path string) ([]byte, error) {
