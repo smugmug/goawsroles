@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 	sdk_credentials "github.com/awslabs/aws-sdk-go/aws"
-	roles "github.com/smugmug/goawsroles/roles"
 	fsnotify "github.com/howeyc/fsnotify"
+	roles "github.com/smugmug/goawsroles/roles"
 	"io/ioutil"
 	"log"
 	"os"
@@ -227,7 +227,7 @@ func (rf *RolesFiles) Credentials() (*sdk_credentials.Credentials, error) {
 	return &sdk_credentials.Credentials{
 		AccessKeyID:     accessKey,
 		SecretAccessKey: secret,
-		SecurityToken:   ""}, nil
+		SessionToken:    ""}, nil
 }
 
 func role_file_bytes(role_file_path string) ([]byte, error) {

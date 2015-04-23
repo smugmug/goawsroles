@@ -116,5 +116,5 @@ func (rf *RolesMaster) Credentials() (*sdk_credentials.Credentials, error) {
 	return &sdk_credentials.Credentials{
 		AccessKeyID:     accessKey,
 		SecretAccessKey: secret,
-		SecurityToken:   ""}, nil
+		SessionToken:    ""}, nil
 }
