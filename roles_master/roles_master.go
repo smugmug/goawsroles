@@ -107,7 +107,8 @@ func (rf *RolesMaster) GetToken() (string, error) {
 	return "", errors.New("roles_master.GetToken: master roles do not use Tokens")
 }
 
-// Credentials will expose the Role as a sdk Credential
+// Credentials will expose the Role as a sdk Credential. Since the RolesMaster
+// instance represents master credentials, there is no token component to return.
 func (rf *RolesMaster) Credentials() (*sdk_credentials.Credentials, error) {
 	accessKey, secret, _, get_err := rf.Get()
 	if get_err != nil {

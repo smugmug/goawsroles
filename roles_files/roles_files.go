@@ -220,14 +220,14 @@ func (rf *RolesFiles) GetToken() (string, error) {
 
 // Credentials will expose the Role as a sdk Credential
 func (rf *RolesFiles) Credentials() (*sdk_credentials.Credentials, error) {
-	accessKey, secret, _, get_err := rf.Get()
+	accessKey, secret, token, get_err := rf.Get()
 	if get_err != nil {
 		return nil, get_err
 	}
 	return &sdk_credentials.Credentials{
 		AccessKeyID:     accessKey,
 		SecretAccessKey: secret,
-		SessionToken:    ""}, nil
+		SessionToken:    token}, nil
 }
 
 func role_file_bytes(role_file_path string) ([]byte, error) {
@@ -259,6 +259,10 @@ func valid_mtime_range(ts []time.Time) bool {
 	return ((uts[0] - uts[len(uts)-1]) < 10)
 }
 
+func validFileName(n string) bool {
+	return !(n == "" || n == "." || n == ".." || n == "/")
+}
+
 // will read in data from three role files and return the struct defined in the the interface
 func (rf *RolesFiles) rolesFilesRead() error {
 	rf.lock.Lock()
@@ -267,15 +271,27 @@ func (rf *RolesFiles) rolesFilesRead() error {
 		e := fmt.Sprintf("roles_files.rolesFilesRead: must specify a non-empty BaseDir")
 		return errors.New(e)
 	}
+
+	if !validFileName(rf.AccessKeyFile) {
+		return errors.New("roles_files.rolesFilesRead: invalid AccessKeyFile")
+	}
 	accessKey_path := rf.BaseDir + string(os.PathSeparator) + rf.AccessKeyFile
 	accessKey_bytes, accessKey_err := role_file_bytes(accessKey_path)
 	if accessKey_err != nil {
 		return accessKey_err
 	}
+
+	if !validFileName(rf.SecretFile) {
+		return errors.New("roles_files.rolesFilesRead: invalid SecretFile")
+	}
 	secret_path := rf.BaseDir + string(os.PathSeparator) + rf.SecretFile
 	secret_bytes, secret_err := role_file_bytes(secret_path)
 	if secret_err != nil {
 		return secret_err
+	}
+
+	if !validFileName(rf.TokenFile) {
+		return errors.New("roles_files.rolesFilesRead: invalid TokenFile")
 	}
 	token_path := rf.BaseDir + string(os.PathSeparator) + rf.TokenFile
 	token_bytes, token_err := role_file_bytes(token_path)
