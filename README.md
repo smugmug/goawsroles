@@ -24,7 +24,7 @@ Secret and Token will be updated. Using this mechanism along with another proces
 to keep our local files updated and valid, we can be sure that any time we call
 the `Get` method on the `RolesFiles` instance, we are getting fresh credentials.
 
-### Example
+### RolesFiles Example
 
 This example is contained within the unit test for the `RolesFiles` instance, with
 some extra comments.
@@ -112,6 +112,8 @@ some extra comments.
             }
         }
 
+
+### RolesMaster
 
 The `RolesMaster` instance is less interesting. This instance of the `RolesReader` interface only
 accepts a one-time initialization of the AccessKey and Secret. Since "master" credentials do
