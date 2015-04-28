@@ -104,7 +104,7 @@ some extra comments.
             }
             time.Sleep(2 * time.Second)
 
-	    // If this is triggered, then it means something went wrong reading the credentials files.
+            // If this is triggered, then it means something went wrong reading the credentials files.
             watch_err := <-c
             if watch_err != nil {
                 e := fmt.Sprintf("error from watcher: %s\n", watch_err.Error())
