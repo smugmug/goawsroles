@@ -126,7 +126,7 @@ not contain a Token, it is forced to be empty.
 
 ### Dependencies
 
-This package depends on the still-develop "official" AWS SDK for Go at
+This package depends on the nascent "official" AWS SDK for Go at
 
         github.com/awslabs/aws-sdk-go/aws
 
