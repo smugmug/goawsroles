@@ -19,13 +19,18 @@ type RolesMaster struct {
 	lock       sync.RWMutex
 }
 
-// NewRolesMasterCredentials returns a pointer to a RolesMaster instance.
-func NewRolesMasterCredentials(accessKey, secret string) *RolesMaster {
+// NewRolesMaster returns a pointer to a RolesMaster instance.
+func NewRolesMaster(accessKey, secret string) *RolesMaster {
 	r := new(RolesMaster)
 	r.roleFields = roles.NewRolesFields()
 	r.roleFields.AccessKey = accessKey
 	r.roleFields.Secret = secret
 	return r
+}
+
+// NewRolesMasterCredentials returns a pointer to a RolesMaster instance.
+func NewRolesMasterCredentials(accessKey, secret string) *RolesMaster {
+	return NewRolesMaster(accessKey, secret)
 }
 
 // ProviderType is a descriptive string of the implementation.
@@ -51,9 +56,9 @@ func (rf *RolesMaster) ZeroRoles() {
 	rf.lock.Unlock()
 }
 
-// RolesRead populates rolesFields with blocking refresh of files
+// RolesRead is a no-op here since RolesMaster is immutable after its initial setting.
 func (rf *RolesMaster) RolesRead() error {
-	return errors.New("RolesMaster credentials immutable and cannot be re-read")
+	return nil
 }
 
 // RolesWatch will panic on this implementation as master credentials are immutable.

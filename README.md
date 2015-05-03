@@ -115,14 +115,27 @@ some extra comments.
 
 ### RolesMaster
 
-The `RolesMaster` instance is less interesting. This instance of the `RolesReader` interface only
-accepts a one-time initialization of the AccessKey and Secret. Since "master" credentials do
-not contain a Token, it is forced to be empty.
+This instance of the `RolesReader` interface only accepts a one-time initialization of the
+AccessKey and Secret. Since "master" credentials do
+not contain a Token, it is forced to be empty. This instance will panic if `RolesWatch`
+is called, as this instance does not support the concept of online updating.
+Using this package
+is trivial: instantiate a new instance with `NewRolesMasterCredentials(accessKey, secret)` and
+extract the values with the various `Get*` functions.
+
+### RolesSimple
+
+This is the simplest `RolesReader` interface. It is just a safe container for the AccessKey,
+Secret and Token. Unlike RolesMaster, a token can be set. This instance will panic if `RolesWatch`
+is called, as this instance does not support the concept of online updating. Using this package
+is trivial: instantiate a new instance with `NewRolesSimple(accessKey, secret, token)` and
+extract the values with the various `Get*` functions.
 
 ### Installation
 
         go get github.com/smugmug/goawsroles/roles_files
         go get github.com/smugmug/goawsroles/roles_master
+        go get github.com/smugmug/goawsroles/roles_simple
 
 ### Dependencies
 

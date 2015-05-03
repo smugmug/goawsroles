@@ -57,7 +57,8 @@ type RolesReader interface {
 	// Any activity that is required to observe, validate, or refresh
 	// roles out-of-band.
 	// The chan 'c' can be used to signal abnormal states, while 's' can
-	// be used to signal normal operation.
+	// be used to signal normal operation. Packages instantiating this
+	// interface may panic if there is no out-of-band updating defined.
 	RolesWatch(c chan error, s chan bool)
 
 	// Many users will want to use this in conjunction with the official
