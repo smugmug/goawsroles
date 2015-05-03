@@ -37,9 +37,10 @@ func (rf *RolesSimple) ProviderType() string {
 }
 
 // UsingIAM tells us if the credentials provided by this role are temporary credentials which
-// also have a Token component, or if they are durable key/secret-only credentials.
+// also have a Token component, or if they are durable key/secret-only credentials. For this
+// package, we allow a token to be set, so we can assume they are IAM-issued.
 func (rf *RolesSimple) UsingIAM() bool {
-	return false
+	return true
 }
 
 // IsEmpty determines if a RolesSimple struct is uninitialized.
