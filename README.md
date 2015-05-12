@@ -137,14 +137,6 @@ extract the values with the various `Get*` functions.
         go get github.com/smugmug/goawsroles/roles_master
         go get github.com/smugmug/goawsroles/roles_simple
 
-### Dependencies
-
-This package depends on the nascent "official" AWS SDK for Go at
-
-        github.com/awslabs/aws-sdk-go/aws
-
-This package changes often so you may need to update it directly if you have build issues with goawsroles.
-
 ### Contact Us
 
 Please contact opensource@smugmug.com for information related to this package.
