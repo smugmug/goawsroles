@@ -4,7 +4,6 @@ package roles_master
 
 import (
 	"errors"
-	sdk_credentials "github.com/awslabs/aws-sdk-go/aws"
 	roles "github.com/smugmug/goawsroles/roles"
 	"sync"
 )
@@ -110,17 +109,4 @@ func (rf *RolesMaster) GetSecret() (string, error) {
 // GetToken returns an empty string as master credentials do not have a Token
 func (rf *RolesMaster) GetToken() (string, error) {
 	return "", errors.New("roles_master.GetToken: master roles do not use Tokens")
-}
-
-// Credentials will expose the Role as a sdk Credential. Since the RolesMaster
-// instance represents master credentials, there is no token component to return.
-func (rf *RolesMaster) Credentials() (*sdk_credentials.Credentials, error) {
-	accessKey, secret, _, get_err := rf.Get()
-	if get_err != nil {
-		return nil, get_err
-	}
-	return &sdk_credentials.Credentials{
-		AccessKeyID:     accessKey,
-		SecretAccessKey: secret,
-		SessionToken:    ""}, nil
 }

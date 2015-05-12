@@ -8,7 +8,6 @@ package roles_files
 import (
 	"errors"
 	"fmt"
-	sdk_credentials "github.com/awslabs/aws-sdk-go/aws"
 	fsnotify "github.com/howeyc/fsnotify"
 	roles "github.com/smugmug/goawsroles/roles"
 	"io/ioutil"
@@ -216,18 +215,6 @@ func (rf *RolesFiles) GetToken() (string, error) {
 	} else {
 		return rf.roleFields.Token, nil
 	}
-}
-
-// Credentials will expose the Role as a sdk Credential
-func (rf *RolesFiles) Credentials() (*sdk_credentials.Credentials, error) {
-	accessKey, secret, token, get_err := rf.Get()
-	if get_err != nil {
-		return nil, get_err
-	}
-	return &sdk_credentials.Credentials{
-		AccessKeyID:     accessKey,
-		SecretAccessKey: secret,
-		SessionToken:    token}, nil
 }
 
 func role_file_bytes(role_file_path string) ([]byte, error) {

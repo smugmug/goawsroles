@@ -2,10 +2,6 @@
 // mechanisms, most likely regular text files (see the roles_files.go implementation).
 package roles
 
-import (
-	sdk_credentials "github.com/awslabs/aws-sdk-go/aws"
-)
-
 type RolesFields struct {
 	AccessKey string
 	Secret    string
@@ -60,13 +56,4 @@ type RolesReader interface {
 	// be used to signal normal operation. Packages instantiating this
 	// interface may panic if there is no out-of-band updating defined.
 	RolesWatch(c chan error, s chan bool)
-
-	// Many users will want to use this in conjunction with the official
-	// sdk, which exposes this getter to obtain the credential tuple
-	// (access,secret,token).
-	// By implementing this function, the 'CredentialsProvider' from
-	// the sdk_credentials package (aws/auth.go) can be used as the
-	// parameter for functions that need credentials, allowing for a
-	// better integration experience with other code that uses the sdk.
-	Credentials() (*sdk_credentials.Credentials, error)
 }

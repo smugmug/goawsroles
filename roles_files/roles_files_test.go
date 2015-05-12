@@ -3,10 +3,10 @@ package roles_files
 import (
 	"fmt"
 	roles "github.com/smugmug/goawsroles/roles"
-	"testing"
-	"time"
 	"os/exec"
 	"path/filepath"
+	"testing"
+	"time"
 )
 
 func TestRolesFiles(t *testing.T) {
@@ -91,9 +91,9 @@ func TestRolesWatcher(t *testing.T) {
 	}()
 
 	time.Sleep(1 * time.Second)
-	touch_cmd1 := exec.Command("touch",rw.BaseDir + string(filepath.Separator) + rw.AccessKeyFile)
-	touch_cmd2 := exec.Command("touch",rw.BaseDir + string(filepath.Separator) + rw.SecretFile)
-	touch_cmd3 := exec.Command("touch",rw.BaseDir + string(filepath.Separator) + rw.TokenFile)
+	touch_cmd1 := exec.Command("touch", rw.BaseDir+string(filepath.Separator)+rw.AccessKeyFile)
+	touch_cmd2 := exec.Command("touch", rw.BaseDir+string(filepath.Separator)+rw.SecretFile)
+	touch_cmd3 := exec.Command("touch", rw.BaseDir+string(filepath.Separator)+rw.TokenFile)
 	touch_err1 := touch_cmd1.Run()
 	if touch_err1 != nil {
 		t.Errorf(touch_err1.Error())
@@ -107,12 +107,6 @@ func TestRolesWatcher(t *testing.T) {
 		t.Errorf(touch_err3.Error())
 	}
 	time.Sleep(2 * time.Second)
-
-	// get future "official" sdk credentials format
-	_,creds_err := rw.Credentials()
-	if creds_err != nil {
-		t.Errorf(creds_err.Error())
-	}
 
 	watch_err := <-c
 	if watch_err != nil {
